@@ -1,0 +1,1911 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التخطيط والتحكم الذكي بالشبكة الخلوية في بيئة نظم المعلومات الجغرافية – م. ياسر المفعلاني</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --green-primary: #176B45;
+      --green-dark: #0d462c;
+      --green-light: #24966B;
+      --green-subtle: #e9f5ef;
+      --red-syrian: #C83C43;
+      --gold-accent: #C5A46D;
+      --gold-light: #faf5ea;
+      --gold-dark: #846830;
+      --bg-main: #FFFFFF;
+      --bg-alt: #F7FAF8;
+      --text-primary: #171B1A;
+      --text-secondary: #2C3634;
+      --text-muted: #556662;
+      --border-light: #D0DDD7;
+      --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 10px 28px rgba(23, 107, 69, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'IBM Plex Sans Arabic', 'Cairo', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html,
+    body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0d1210;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    /* Viewport Wrapper */
+    #viewport-wrapper {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    /* 1920x1080 Native Fixed Resolution Canvas */
+    #stage-container {
+      position: absolute;
+      width: 1920px;
+      height: 1080px;
+      background: var(--bg-main);
+      transform-origin: center center;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Watermark Syria Map Silhouette */
+    .syria-watermark {
+      position: absolute;
+      top: 53%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 82%;
+      height: 82%;
+      opacity: 0.038;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Navigation Header */
+    header.pres-header {
+      height: 72px;
+      padding: 0 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2.5px solid var(--border-light);
+      background: rgba(255, 255, 255, 0.98);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .header-branding {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .header-branding img {
+      height: 52px;
+      width: auto;
+      object-fit: contain;
+    }
+
+    .header-titles {
+      display: flex;
+      flex-direction: column;
+      text-align: right;
+    }
+
+    .header-titles .inst-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--green-primary);
+      letter-spacing: 0.2px;
+    }
+
+    .header-titles .thesis-title-mini {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .slide-badge {
+      background: var(--green-subtle);
+      color: var(--green-primary);
+      border: 2px solid rgba(23, 107, 69, 0.3);
+      padding: 6px 22px;
+      border-radius: 30px;
+      font-weight: 800;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-btn {
+      background: var(--bg-alt);
+      border: 2px solid var(--border-light);
+      color: var(--text-primary);
+      width: 46px;
+      height: 46px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 22px;
+      font-weight: bold;
+      transition: all 0.2s ease;
+    }
+
+    .nav-btn:hover {
+      background: var(--green-primary);
+      color: #fff;
+      border-color: var(--green-primary);
+    }
+
+    /* Progress bar */
+    .progress-track {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: var(--border-light);
+      z-index: 101;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--gold-accent), var(--green-light), var(--green-primary));
+      width: 6.66%;
+      transition: width 0.35s ease;
+    }
+
+    /* Slide Deck viewport */
+    #slides-deck {
+      position: relative;
+      flex: 1;
+      height: 954px;
+      overflow: hidden;
+      background: var(--bg-main);
+    }
+
+    .slide-item {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 24px 50px 20px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(-15px);
+      transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+      display: flex;
+      flex-direction: column;
+      z-index: 1;
+    }
+
+    .slide-item.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0);
+      z-index: 10;
+    }
+
+    /* Slide Titles & Headings */
+    .slide-header {
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      border-bottom: 3px solid var(--green-subtle);
+      padding-bottom: 12px;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slide-title-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slide-category {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gold-dark);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .slide-category::before {
+      content: "";
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--gold-accent);
+      display: inline-block;
+    }
+
+    .slide-title {
+      font-size: 38px;
+      font-weight: 900;
+      color: var(--green-dark);
+      line-height: 1.25;
+    }
+
+    .slide-subtitle {
+      font-size: 21px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Slide Body - Perfectly Balanced */
+    .slide-body {
+      flex: 1;
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      justify-content: stretch;
+      min-height: 0;
+      gap: 16px;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 26px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .grid-2col-map {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 28px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .grid-3col {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .grid-4col {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    /* Luxury Academic Cards */
+    .academic-card {
+      background: #FFFFFF;
+      border: 2px solid var(--border-light);
+      border-radius: 16px;
+      padding: 24px 28px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 16px;
+      position: relative;
+      min-height: 0;
+    }
+
+    .academic-card.highlight {
+      border-right: 8px solid var(--green-primary);
+      background: linear-gradient(135deg, #ffffff 0%, var(--green-subtle) 200%);
+    }
+
+    .academic-card.gold-border {
+      border-right: 8px solid var(--gold-accent);
+      background: linear-gradient(135deg, #ffffff 0%, var(--gold-light) 200%);
+    }
+
+    .academic-card.alert-border {
+      border-right: 8px solid var(--red-syrian);
+      background: linear-gradient(135deg, #ffffff 0%, #fdf2f2 200%);
+    }
+
+    .card-title {
+      font-size: 26px;
+      font-weight: 900;
+      color: var(--green-dark);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      line-height: 1.3;
+    }
+
+    .card-text {
+      font-size: 22px;
+      line-height: 1.65;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    /* Syrian Map Visual Containers */
+    .map-frame {
+      background: #FFFFFF;
+      border: 2px solid var(--border-light);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .map-frame-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 10px 10px;
+      border-bottom: 2px solid var(--border-light);
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--green-primary);
+      flex-shrink: 0;
+    }
+
+    .map-frame-body {
+      position: relative;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      min-height: 0;
+      padding: 6px 0;
+    }
+
+    .map-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    /* Stat Numbers */
+    .stat-hero-number {
+      font-size: 78px;
+      font-weight: 900;
+      color: var(--green-primary);
+      line-height: 1;
+      font-feature-settings: "tnum";
+      font-variant-numeric: tabular-nums;
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+    }
+
+    .stat-hero-number.gold {
+      color: var(--gold-dark);
+    }
+
+    .stat-hero-number.red {
+      color: var(--red-syrian);
+    }
+
+    .stat-label {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    /* Academic Tables */
+    .academic-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 2px solid var(--border-light);
+      box-shadow: var(--shadow-sm);
+      font-size: 20px;
+    }
+
+    .academic-table th {
+      background: var(--green-subtle);
+      color: var(--green-dark);
+      padding: 14px 18px;
+      text-align: right;
+      font-weight: 900;
+      font-size: 21px;
+      border-bottom: 3px solid rgba(23, 107, 69, 0.25);
+    }
+
+    .academic-table td {
+      padding: 13px 18px;
+      border-bottom: 1.5px solid var(--border-light);
+      color: var(--text-secondary);
+      background: #FFFFFF;
+      font-weight: 600;
+      font-size: 20px;
+    }
+
+    .academic-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .academic-table tr.winner-row td {
+      background: rgba(36, 150, 107, 0.12);
+      font-weight: 900;
+      color: var(--green-dark);
+      font-size: 21px;
+    }
+
+    .badge-win {
+      display: inline-block;
+      background: var(--green-primary);
+      color: white;
+      font-size: 15px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-right: 6px;
+      font-weight: 800;
+    }
+
+    /* Timeline Horizontal Steps */
+    .timeline-steps {
+      display: flex;
+      align-items: stretch;
+      gap: 14px;
+      width: 100%;
+      flex-shrink: 0;
+    }
+
+    .timeline-step-card {
+      flex: 1;
+      background: #FFFFFF;
+      border: 2px solid var(--border-light);
+      border-radius: 14px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .timeline-step-card.active-step {
+      border-top: 5px solid var(--green-primary);
+    }
+
+    .timeline-step-card.alert-step {
+      border-top: 5px solid var(--red-syrian);
+    }
+
+    .step-number-tag {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--green-subtle);
+      color: var(--green-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    /* Footer Dots */
+    footer.pres-footer {
+      height: 54px;
+      padding: 0 50px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-top: 2px solid var(--border-light);
+      background: #FFFFFF;
+      z-index: 100;
+      flex-shrink: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .dots-strip {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .dot-node {
+      width: 12px;
+      height: 12px;
+      border-radius: 6px;
+      background: var(--border-light);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .dot-node.active {
+      width: 34px;
+      background: var(--green-primary);
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="viewport-wrapper">
+    <div id="stage-container">
+      <!-- Embedded Syria Map Watermark SVG -->
+      <svg class="syria-watermark" viewBox="230 40 520 470" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path
+          d="M 733.5 46 L 732.8 45.5 L 734.1 42.3 L 732.9 42.1 L 731 45.5 L 726.9 48.6 L 724.4 52.1 L 714.5 57.1 L 698.2 61.1 L 690.3 61.6 L 683 64.2 L 662.5 64.6 L 657.4 66.2 L 653.7 63.5 L 637.1 60.4 L 632.3 60.5 L 629.6 62.1 L 627.5 60.9 L 624.5 60.8 L 606.7 69.7 L 598.5 71.4 L 581.2 82.8 L 572 85.4 L 569.4 87.7 L 553.5 95.3 L 544.6 96.4 L 540.2 98.1 L 527.6 100.4 L 516.4 101.4 L 507.2 103.8 L 491.6 100.2 L 478.4 100.8 L 469.8 99.8 L 457.1 87.4 L 445.4 82.1 L 433.7 80.4 L 429 81.1 L 419.9 85.6 L 417.7 88.4 L 412.8 89.4 L 398.8 95.9 L 394.5 95.8 L 388.6 97.5 L 374.9 106.3 L 359.5 103.8 L 353.1 104.9 L 350.2 103.9 L 348.4 104.3 L 347 107.4 L 346 107.7 L 341.3 104.2 L 343.4 98.2 L 340.6 97 L 338.5 94.8 L 335 92.8 L 331.8 93.2 L 324.4 91.2 L 314.5 86.9 L 314.9 90 L 311 95.1 L 311.8 100 L 308.1 106.5 L 309 113.5 L 307.8 117.1 L 305.4 119.6 L 308.2 128.9 L 310.8 129.8 L 311.1 133 L 309.6 135.2 L 314 135.2 L 314.3 137.8 L 316.5 138.8 L 315.9 140.2 L 317 142.2 L 316.6 143.2 L 310.7 145.8 L 304.6 143.8 L 301.1 144.2 L 299.3 147.2 L 293.7 145.2 L 294 148 L 292.1 150.2 L 293.3 152.8 L 292.5 155.2 L 293.7 158.2 L 292.3 166 L 289.7 166.8 L 287.6 165.7 L 286.1 167.1 L 286.5 170 L 281.9 169.5 L 279.6 170.8 L 277.4 175.2 L 277.8 179 L 276.5 183.3 L 272.5 178.6 L 265.2 177.2 L 265.4 173.1 L 264.4 171.6 L 258.9 173.6 L 257.8 172.5 L 254.7 178.3 L 252.1 179.9 L 249.2 179.5 L 250.2 180.1 L 252.6 189.5 L 249.1 195.3 L 247 196.5 L 247.6 202 L 246.6 202 L 245.5 204.1 L 243.1 204.7 L 244.8 204.6 L 244.4 206.5 L 247.2 208.8 L 246.6 211.9 L 249.8 212.1 L 258 219.6 L 258.3 233.3 L 260.2 233.4 L 261.6 234.9 L 260.4 233.7 L 258.9 234.3 L 260.9 240.2 L 258.6 242.6 L 258.5 244.5 L 256 248.8 L 255.5 253.3 L 256.5 257.7 L 255.2 259.5 L 254.7 267 L 262.2 291.4 L 263 290.8 L 266.2 292.9 L 268.3 292.2 L 270.7 292.8 L 273 291.6 L 276.6 292.9 L 278 292 L 280.6 293.1 L 282.1 292.2 L 284.7 292.9 L 286.1 292.3 L 286.5 289.2 L 288.3 287.7 L 289.7 288.2 L 292.2 292.3 L 295.9 294.1 L 298.7 292.2 L 298.1 296.3 L 296.5 296.3 L 295.9 295.1 L 294.4 294.8 L 294.1 297.1 L 295.1 299.2 L 288.8 302.5 L 288.7 304 L 291.5 304.8 L 295.1 303.6 L 297.5 304 L 297.4 306 L 298.7 308 L 305.4 311.8 L 305.3 314.5 L 303.7 316.4 L 306.2 321.5 L 309.1 322.5 L 307.1 325.3 L 308.1 329.7 L 310.9 331.9 L 308.5 333.5 L 306.5 336.4 L 306.8 337.6 L 302.4 341.7 L 301.8 345.2 L 302.8 346.2 L 301.5 345.8 L 301.1 347.8 L 300.6 345.8 L 299.8 346.7 L 295.8 345.3 L 295.1 346.5 L 294 346.5 L 294.4 347.8 L 293.2 347.6 L 292.7 349.4 L 288.3 353.2 L 285.4 357.8 L 285.1 359.1 L 287.2 359.9 L 288 361.5 L 291.4 361.9 L 293.1 363.9 L 293.1 365.6 L 291.4 366.8 L 282.2 363.6 L 281.6 365.2 L 278.9 365.9 L 276.9 365.5 L 275.3 363.6 L 271.9 366.5 L 270.3 367.1 L 269 366.5 L 267.2 370.2 L 266 371.7 L 264.8 371.3 L 263.2 375.4 L 261.6 376.7 L 261.3 379.6 L 258.5 382.2 L 259.4 383.4 L 262 383.2 L 263.5 385 L 265.4 385.3 L 268.2 387.8 L 268.3 389.2 L 266 391.9 L 262.1 392.3 L 259.3 393.9 L 259.9 398.1 L 256 401.7 L 250.6 404.9 L 249.7 408.6 L 244.5 411.5 L 242.4 411.3 L 241.8 413.2 L 238.1 416 L 236.8 415.5 L 235.1 416.3 L 235.3 418.9 L 237.4 418.2 L 239.9 418.9 L 238.6 420.4 L 238.9 427 L 237.6 429.6 L 235.9 438.5 L 235.6 448.7 L 234.6 449.7 L 236.9 452.9 L 236.9 457.8 L 237.7 458 L 238.3 460.8 L 236.1 468.9 L 236.9 469.7 L 238.4 469.4 L 241.7 465.7 L 248.7 462.3 L 249.1 464.1 L 250.8 465 L 254.5 464.5 L 258.9 465.5 L 260.1 467.4 L 262.4 468.5 L 261.7 470.3 L 266.5 471.8 L 266.3 476 L 269 478.8 L 270.6 484 L 277.2 484 L 279.2 483.1 L 294.6 496.1 L 299.9 496.9 L 301.6 498.1 L 315.9 500 L 316.8 501.1 L 318.2 500.5 L 326.7 502 L 329.3 499.5 L 474.4 407 L 641.9 312 L 651.4 289.6 L 658.9 278.5 L 657.4 246.5 L 658.1 238.4 L 661.7 223.2 L 662.2 213.8 L 670.7 200.5 L 669.7 181.4 L 660.4 161 L 662.7 143.8 L 663.1 132.8 L 671.9 117.1 L 703.4 110.5 L 711.7 103.3 L 726.8 85.2 L 745.4 65.9 L 745.2 64.6 L 743.1 63 L 743.3 59.4 L 741.8 55.7 L 742 53.3 L 743.4 51.6 L 742.8 49.8 L 739.5 47.5 L 738.6 45.6 L 737.2 46.6 L 733.5 46 Z"
+          fill="#176B45" stroke="#176B45" stroke-width="2" />
+      </svg>
+
+      <!-- Top Academic Navigation Bar -->
+      <header class="pres-header">
+        <div class="header-branding">
+          <img src="assets/hiast-logo-transparent.png" alt="HIAST Logo" onerror="this.src='assets/hiast-logo.png'">
+          <div class="header-titles">
+            <span class="inst-title">المعهد العالي للعلوم التطبيقية والتكنولوجيا · قسم المعلوماتية</span>
+            <span class="thesis-title-mini">التخطيط والتحكم الذكي بالشبكة الخلوية في بيئة GIS</span>
+          </div>
+        </div>
+        <div class="header-controls">
+          <div class="slide-badge">
+            <span>شريحة</span>
+            <strong id="current-slide-num">١</strong>
+            <span>/</span>
+            <span>١٥</span>
+          </div>
+          <button class="nav-btn" onclick="prevSlide()" title="السابق (←)">→</button>
+          <button class="nav-btn" onclick="nextSlide()" title="التالي (→)">←</button>
+          <button class="nav-btn" onclick="toggleFullScreen()" title="ملء الشاشة (F)">⛶</button>
+        </div>
+      </header>
+
+      <!-- Main Slides Deck (15 Slides) -->
+      <main id="slides-deck">
+
+        <!-- ==========================================
+           SLIDE 01: الغلاف الأكاديمي الفاخر
+           ========================================== -->
+        <div class="slide-item active" id="slide-1">
+          <div class="slide-body" style="justify-content: center; align-items: center; text-align: center;">
+            <div
+              style="width: 100%; max-width: 1420px; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+
+              <div
+                style="display: flex; align-items: center; gap: 16px; background: var(--green-subtle); border: 2.5px solid rgba(23,107,69,0.35); padding: 12px 36px; border-radius: 40px;">
+                <span style="color: var(--green-primary); font-size: 23px; font-weight: 800;">أطروحة أعدت لنيل درجة
+                  الدكتوراه في هندسة المعلوماتية</span>
+                <span style="color: var(--gold-dark); font-size: 20px;">♦</span>
+                <span style="color: var(--text-secondary); font-size: 23px; font-weight: 700;">نظم المعلومات
+                  والشبكات</span>
+              </div>
+
+              <h1 style="font-size: 56px; font-weight: 900; color: var(--green-dark); line-height: 1.35; margin: 4px 0;">
+                التخطيط والتحكم الذكي بالشبكة الخلوية<br>
+                <span style="color: var(--green-light); font-size: 46px;">في بيئة نظم المعلومات الجغرافية (GIS)</span>
+              </h1>
+
+              <p
+                style="direction: ltr; font-size: 23px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.5px;">
+                Intelligent Planning and Control of Cellular Networks in a Geographic Information Systems Environment
+              </p>
+
+              <div
+                style="width: 320px; height: 5px; background: linear-gradient(90deg, var(--gold-accent), var(--green-primary)); border-radius: 3px; margin: 4px 0;">
+              </div>
+
+              <!-- Academic People Card -->
+              <div style="width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 12px;">
+                <div class="academic-card highlight" style="text-align: right; padding: 28px 36px;">
+                  <span style="font-size: 20px; font-weight: 800; color: var(--gold-dark);">إعداد الباحث</span>
+                  <span style="font-size: 36px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">م. ياسر المفعلاني</span>
+                  <span style="font-size: 20px; font-weight: 600; color: var(--text-muted);">قسم المعلوماتية – المعهد
+                    العالي للعلوم التطبيقية والتكنولوجيا</span>
+                </div>
+
+                <div class="academic-card gold-border" style="text-align: right; padding: 28px 36px;">
+                  <span style="font-size: 20px; font-weight: 800; color: var(--gold-dark);">إشراف الأستاذ الدكتور</span>
+                  <span style="font-size: 36px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">أ.د. مصطفى دقاق</span>
+                  <span style="font-size: 20px; font-weight: 600; color: var(--text-muted);">أستاذ في المعهد العالي
+                    للعلوم التطبيقية والتكنولوجيا</span>
+                </div>
+              </div>
+
+              <div
+                style="display: flex; gap: 40px; align-items: center; margin-top: 12px; font-size: 22px; font-weight: 700; color: var(--text-muted);">
+                <span>📍 دمشق، الجمهورية العربية السورية</span>
+                <span>•</span>
+                <span>🏛️ المعهد العالي للعلوم التطبيقية والتكنولوجيا (HIAST)</span>
+                <span>•</span>
+                <span>📅 2026 م</span>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 02: فكرة الأطروحة في دقيقة
+           ========================================== -->
+        <div class="slide-item" id="slide-2">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الرؤية والجوهر العلمي</span>
+              <h2 class="slide-title">ما الذي تقدمه هذه الأطروحة؟</h2>
+              <span class="slide-subtitle">إطار عمل تكاملي يجمع العلم المكاني مع التحكم التشغيلي للشبكات الخلوية</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <!-- Central Vision Box -->
+            <div
+              style="background: linear-gradient(135deg, var(--green-subtle) 0%, #FFFFFF 100%); border: 2.5px solid rgba(23,107,69,0.35); border-radius: 16px; padding: 24px 38px; text-align: center; box-shadow: var(--shadow-sm); flex-shrink: 0;">
+              <span style="font-size: 32px; font-weight: 900; color: var(--green-dark); line-height: 1.55;">
+                «إطار ذكي يجمع بين التخطيط المكاني العادل للشبكات الخلوية والتحكم الجغرافي الدقيق بالتغطية في حالات
+                الطوارئ»
+              </span>
+            </div>
+
+            <!-- 3 Pillars Grid -->
+            <div class="grid-3col">
+              <div class="academic-card highlight" style="padding: 30px 28px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                  <div
+                    style="width: 60px; height: 60px; border-radius: 14px; background: var(--green-subtle); color: var(--green-primary); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900;">
+                    ١</div>
+                  <div class="card-title" style="font-size: 27px;">تخطيط الترقية نحو 5G</div>
+                </div>
+                <div class="card-text" style="font-size: 23px; line-height: 1.7; font-weight: 600;">
+                  تحديد الأولويات المكانية لترقية المواقع الخلوية القائمة تدريجياً لتقليل الإنفاق الرأسمالي الإجمالي
+                  وتفادي كلفة النشر الشامل.
+                </div>
+                <div
+                  style="padding-top: 14px; border-top: 2px dashed var(--border-light); font-size: 20px; font-weight: 800; color: var(--green-light);">
+                  Phased 5G Upgrade Planning
+                </div>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 30px 28px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                  <div
+                    style="width: 60px; height: 60px; border-radius: 14px; background: var(--gold-light); color: var(--gold-dark); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900;">
+                    ٢</div>
+                  <div class="card-title" style="font-size: 27px; color: var(--gold-dark);">تحسين رباعي الأهداف</div>
+                </div>
+                <div class="card-text" style="font-size: 23px; line-height: 1.7; font-weight: 600;">
+                  الموازنة الدقيقة بين <strong>تعظيم التغطية</strong>، <strong>تقليل الكلفة CAPEX</strong>،
+                  <strong>ترشيد استهلاك الطاقة</strong>، و<strong>تحقيق العدالة المكانية (SFI)</strong>.
+                </div>
+                <div
+                  style="padding-top: 14px; border-top: 2px dashed var(--border-light); font-size: 20px; font-weight: 800; color: var(--gold-dark);">
+                  Coverage · Cost · Energy · Fairness
+                </div>
+              </div>
+
+              <div class="academic-card alert-border" style="padding: 30px 28px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                  <div
+                    style="width: 60px; height: 60px; border-radius: 14px; background: #fdf0f0; color: var(--red-syrian); display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 900;">
+                    ٣</div>
+                  <div class="card-title" style="font-size: 27px; color: var(--red-syrian);">عزل وتحكم بـ GIS</div>
+                </div>
+                <div class="card-text" style="font-size: 23px; line-height: 1.7; font-weight: 600;">
+                  عزل الخدمة جغرافياً في سيناريوهات الطوارئ من جانب الشبكة الأساسية (Core Network) بدون تشويش راديوي، مع
+                  تنسيق متعدد الموردين واستعادة موثوقة.
+                </div>
+                <div
+                  style="padding-top: 14px; border-top: 2px dashed var(--border-light); font-size: 20px; font-weight: 800; color: var(--red-syrian);">
+                  Bearer Control & Multi-Vendor
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 03: المشكلة والدوافع مع خريطة سوريا
+           ========================================== -->
+        <div class="slide-item" id="slide-3">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">إشكالية البحث والدوافع الوطنية</span>
+              <h2 class="slide-title">لماذا نحتاج إلى هذا الحل؟ التحديات الميدانية للشبكة السورية</h2>
+              <span class="slide-subtitle">معضلتا الاستثمار المالي المكاني وتحديات إدارة التغطية في الطوارئ</span>
+            </div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-2col-map">
+
+              <!-- Challenges Cards -->
+              <div
+                style="display: flex; flex-direction: column; gap: 18px; justify-content: space-between; min-height: 0;">
+                <div class="academic-card alert-border" style="flex: 1; padding: 22px 26px;">
+                  <div class="card-title" style="color: var(--red-syrian); font-size: 26px;">
+                    <span>⚠️ التحدي الأول: معضلات التخطيط والترقية المكانية</span>
+                  </div>
+                  <ul
+                    style="padding-right: 26px; font-size: 21px; color: var(--text-secondary); line-height: 1.75; font-weight: 600;">
+                    <li style="margin-bottom: 6px;"><strong>كلفة استثمارية باهظة:</strong> تعذر النشر الشامل لـ 5G والحاجة لترقية مرحلية ذكية.</li>
+                    <li style="margin-bottom: 6px;"><strong>الفجوة الجغرافية (حضر / ريف):</strong> تركز الترقية بالمدن وتهميش الأرياف اقتصادياً.</li>
+                    <li style="margin-bottom: 6px;"><strong>تحديات الطاقة:</strong> ارتفاع كلفة التغذية الكهربائية ومحدودية مصادر الطاقة للمواقع.</li>
+                    <li><strong>غياب العدالة المكانية:</strong> إهمال النماذج التقليدية للتوزيع المنصف للخدمات.</li>
+                  </ul>
+                </div>
+
+                <div class="academic-card highlight" style="flex: 1; padding: 22px 26px;">
+                  <div class="card-title" style="font-size: 26px;">
+                    <span>🛡️ التحدي الثاني: قصور آليات التحكم التقليدية في الطوارئ</span>
+                  </div>
+                  <ul
+                    style="padding-right: 26px; font-size: 21px; color: var(--text-secondary); line-height: 1.75; font-weight: 600;">
+                    <li style="margin-bottom: 6px;"><strong>أضرار التشويش الراديوي:</strong> تلوث طيفي عشوائي وتعطيل قنوات الطوارئ والإغاثة.</li>
+                    <li style="margin-bottom: 6px;"><strong>تسرب التغطية:</strong> عجز التشويش الفيزيائي عن الالتزام بالحدود الجغرافية الدقيقة.</li>
+                    <li><strong>تعدد الموردين:</strong> وجود تجهيزات Huawei وEricsson دون أداة تنسيق موحدة.</li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Syria Real Candidate Sites Map -->
+              <div class="map-frame">
+                <div class="map-frame-header">
+                  <span>خريطة توزع المواقع الخلوية في سوريا (البيانات الحقيقية)</span>
+                  <span style="font-size: 17px; color: var(--text-muted);">الشكل ١٨ من الأطروحة</span>
+                </div>
+                <div class="map-frame-body">
+                  <img src="figures/fig18_syria_candidate_sites_map.png" alt="Syria Candidate Sites Map">
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800; color: var(--green-dark); text-align: center; padding: 12px 14px; background: var(--green-subtle); width: 100%; border-radius: 8px; flex-shrink: 0;">
+                  تفاوت مكاني حاد وتمركز كثيف للمواقع في الشريط الغربي والمدن الكبرى
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 04: الدراسات السابقة والفجوة البحثية
+           ========================================== -->
+        <div class="slide-item" id="slide-4">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">التأصيل النظري والمقارنة</span>
+              <h2 class="slide-title">من الحلول التقليدية إلى الإطار المتكامل</h2>
+              <span class="slide-subtitle">تحديد الفجوات العلمية وسدها عبر المنهجية المقترحة بالأطروحة</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-2col">
+
+              <!-- Traditional Approaches -->
+              <div class="academic-card alert-border" style="background: #FFFDFD; padding: 24px 28px;">
+                <div class="card-title"
+                  style="color: var(--red-syrian); justify-content: space-between; font-size: 26px;">
+                  <span>المقاربات التقليدية في الأدبيات (Traditional)</span>
+                  <span
+                    style="font-size: 18px; background: rgba(200,60,67,0.12); padding: 5px 14px; border-radius: 8px; font-weight: 800;">أوجه القصور</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px; flex: 1; justify-content: space-around;">
+                  <div style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid #f5d4d4;">
+                    <strong style="color: var(--red-syrian); font-size: 22px;">✗ إهمال العدالة المكانية:</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">التركيز
+                      الأحادي على تعظيم التغطية الإجمالية فقط يوجه كل الاستثمارات للمدن الكثيفة ويهمل الأرياف كلياً.</p>
+                  </div>
+                  <div style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid #f5d4d4;">
+                    <strong style="color: var(--red-syrian); font-size: 22px;">✗ انفصال التخطيط عن التحكم:</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">معالجة
+                      التخطيط طويل الأمد كمسألة مستقلة تماماً عن إدارة الأزمات والتحكم الجغرافي الطارئ.</p>
+                  </div>
+                  <div style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid #f5d4d4;">
+                    <strong style="color: var(--red-syrian); font-size: 22px;">✗ التعطيل الفيزيائي العشوائي:</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">
+                      الاعتماد على أجهزة التشويش أو إطفاء المحطات العشوائي دون تحكم دقيق بقنوات الخدمة.</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Proposed Framework -->
+              <div class="academic-card highlight" style="padding: 24px 28px;">
+                <div class="card-title" style="justify-content: space-between; font-size: 26px;">
+                  <span>الإطار المقترح في الأطروحة (Proposed Framework)</span>
+                  <span
+                    style="font-size: 18px; background: var(--green-subtle); color: var(--green-primary); padding: 5px 14px; border-radius: 8px; font-weight: 800;">الإسهام العلمي</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 14px; flex: 1; justify-content: space-around;">
+                  <div
+                    style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid rgba(23,107,69,0.3);">
+                    <strong style="color: var(--green-primary); font-size: 22px;">✓ إدماج مؤشر العدالة المكانية (SFI):</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">صياغة
+                      رياضية صريحة تعتمد مؤشر Jain's Fairness لضمان توزيع إنمائي منصف لأبراج 5G.</p>
+                  </div>
+                  <div
+                    style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid rgba(23,107,69,0.3);">
+                    <strong style="color: var(--green-primary); font-size: 22px;">✓ مسار موحد بمساعدة نظم GIS:</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">ربط
+                      التخطيط الاستراتيجي بالتحكم التشغيلي بالاعتماد على قاعدة بيانات جغرافية مركزية موحدة.</p>
+                  </div>
+                  <div
+                    style="background: #fff; padding: 16px 20px; border-radius: 12px; border: 2px solid rgba(23,107,69,0.3);">
+                    <strong style="color: var(--green-primary); font-size: 22px;">✓ عزل شبكي رقمي قابل للاستعادة:</strong>
+                    <p style="font-size: 20.5px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">تقييد
+                      قنوات الخدمة (Bearer Control) مع إبقاء قنوات الطوارئ ومراقبة مؤشرات الأداء الحية.</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 05: قاعدة البيانات الوطنية
+           ========================================== -->
+        <div class="slide-item" id="slide-5">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">البنية التحتية والبيانات الميدانية</span>
+              <h2 class="slide-title">قاعدة بيانات واقعية شاملة للبنية التحتية الخلوية السورية</h2>
+              <span class="slide-subtitle">بناء وتوحيد أضخم قاعدة بيانات تشغيلية جغرافية مكانية للمشغلين في سوريا</span>
+            </div>
+          </div>
+          <div class="slide-body">
+            <div class="grid-2col-map">
+
+              <div
+                style="display: flex; flex-direction: column; gap: 16px; justify-content: space-between; min-height: 0;">
+                <!-- Big Hero Stat -->
+                <div class="academic-card highlight" style="padding: 22px 28px;">
+                  <span class="stat-label" style="font-size: 21px;">إجمالي السجلات التشغيلية الموحدة والمعالجة جغرافياً في سوريا</span>
+                  <div class="stat-hero-number" style="font-size: 82px; margin: 6px 0;">
+                    <span>79,268</span>
+                    <span style="font-size: 30px; font-weight: 800; color: var(--green-dark);">موقعاً خلوياً</span>
+                  </div>
+                  <span style="font-size: 21px; font-weight: 700; color: var(--text-secondary);">
+                    تغطي كافة المحافظات والمناطق السورية عبر المشغلين الوطنيين
+                  </span>
+                </div>
+
+                <!-- Detailed Grid Stats -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                  <div class="academic-card" style="padding: 18px 22px;">
+                    <span class="stat-label" style="font-size: 19px;">المشغّلان المشمولان</span>
+                    <span style="font-size: 26px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">MTN & Syriatel</span>
+                    <span style="font-size: 17px; color: var(--text-muted); font-weight: 600;">بيانات موحدة ومطابقة</span>
+                  </div>
+
+                  <div class="academic-card" style="padding: 18px 22px;">
+                    <span class="stat-label" style="font-size: 19px;">أجيال الاتصال</span>
+                    <span style="font-size: 26px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">2G · 3G · 4G LTE</span>
+                    <span style="font-size: 17px; color: var(--text-muted); font-weight: 600;">تحليل تقني متعدد الطبقات</span>
+                  </div>
+
+                  <div class="academic-card" style="padding: 18px 22px;">
+                    <span class="stat-label" style="font-size: 19px;">المعالجة المكانية</span>
+                    <span style="font-size: 25px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">مطابقة GIS كاملة</span>
+                    <span style="font-size: 17px; color: var(--text-muted); font-weight: 600;">إسقاط وتصحيح الإحداثيات</span>
+                  </div>
+
+                  <div class="academic-card" style="padding: 18px 22px;">
+                    <span class="stat-label" style="font-size: 19px;">التصنيف الديمغرافي</span>
+                    <span style="font-size: 25px; font-weight: 900; color: var(--green-dark); margin: 4px 0;">حضري / شبه حضري / ريفي</span>
+                    <span style="font-size: 17px; color: var(--text-muted); font-weight: 600;">تحديد دقيق لطبيعة المنطقة</span>
+                  </div>
+                </div>
+
+                <div
+                  style="font-size: 20px; font-weight: 700; color: var(--text-secondary); background: var(--green-subtle); padding: 14px 20px; border-radius: 12px; border: 2px solid rgba(23,107,69,0.3); line-height: 1.6;">
+                  📌 خضعت البيانات للتنقية التامة، وإزالة السجلات المكررة، وتوحيد الصيغ البرمجية لتشكل أساساً موثوقاً
+                  لمسألتي الاستمثال والتحكم.
+                </div>
+              </div>
+
+              <!-- Syria Distribution Map -->
+              <div class="map-frame">
+                <div class="map-frame-header">
+                  <span>التوزيع المكاني للمواقع الخلوية في سوريا</span>
+                  <span style="font-size: 17px; color: var(--text-muted);">الشكل ٠٩ من الأطروحة</span>
+                </div>
+                <div class="map-frame-body">
+                  <img src="figures/fig09_dataset_distribution.png" alt="Syria Cellular Dataset Distribution">
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800; color: var(--green-dark); text-align: center; padding: 12px 14px; background: var(--green-subtle); width: 100%; border-radius: 8px; flex-shrink: 0;">
+                  التمثيل الميداني الفعلي للبيانات الخلوية الموزعة على الخريطة السورية
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 06: الإطار العام للنظام المقترح
+           ========================================== -->
+        <div class="slide-item" id="slide-6">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الهيكلية المعمارية الشاملة</span>
+              <h2 class="slide-title">إطار عمل موحد لمسارين تكامليين (تخطيط استراتيجي + تحكم تشغيلي)</h2>
+              <span class="slide-subtitle">البنية التكاملية التي تربط بين بيانات البنية التحتية، الخوارزميات التجريبية،
+                والتحكم الشبكي المنسق</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="timeline-steps" style="margin-bottom: 14px;">
+              <div class="timeline-step-card active-step" style="flex: 1.2; padding: 18px 24px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span class="step-number-tag" style="width: 40px; height: 40px; font-size: 22px;">١</span>
+                  <strong style="font-size: 23px; color: var(--green-dark);">قاعدة البيانات الوطنية المركزية</strong>
+                </div>
+                <p style="font-size: 20px; color: var(--text-secondary); font-weight: 600; line-height: 1.55;">
+                  National Cellular Database تضم 79,268 موقعاً خلوياً مع كامل المعالم الفنية للمشغلين.
+                </p>
+              </div>
+
+              <div class="timeline-step-card active-step" style="flex: 1.2; padding: 18px 24px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <span class="step-number-tag" style="width: 40px; height: 40px; font-size: 22px;">٢</span>
+                  <strong style="font-size: 23px; color: var(--green-dark);">محرك المعالجة والتحليل المكاني GIS</strong>
+                </div>
+                <p style="font-size: 20px; color: var(--text-secondary); font-weight: 600; line-height: 1.55;">
+                  تنقية البيانات، إسقاط المضلعات الجغرافية، وحساب تقاطعات التغطية ومؤشرات الطلب السكاني.
+                </p>
+              </div>
+            </div>
+
+            <!-- Forked Paths Grid -->
+            <div class="grid-2col">
+
+              <!-- Path 1 -->
+              <div class="academic-card highlight" style="border-right-width: 8px; padding: 24px 28px;">
+                <div class="card-title" style="color: var(--green-primary); font-size: 26px;">
+                  <span>المسار الأول: التخطيط والتحسين الذكي للترقية (Planning)</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 8px 0;">
+                  <div
+                    style="background: #fff; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--border-light); font-size: 19.5px; line-height: 1.5;">
+                    <strong style="color: var(--green-dark); font-size: 21.5px;">الخوارزميات التجريبية:</strong><br>
+                    BPSO & AGA مع آليات إصلاح القيود
+                  </div>
+                  <div
+                    style="background: #fff; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--border-light); font-size: 19.5px; line-height: 1.5;">
+                    <strong style="color: var(--green-dark); font-size: 21.5px;">دوال الهدف الرباعية:</strong><br>
+                    Coverage · CAPEX · Energy · SFI
+                  </div>
+                </div>
+                <div
+                  style="background: var(--green-subtle); padding: 14px 18px; border-radius: 12px; font-size: 20px; color: var(--green-dark); font-weight: 700; line-height: 1.55;">
+                  الهدف النهائي: خطة ترقية مكانية متوازنة تحدد المواقع الواجب ترقيتها بأقل كلفة وطاقة وأعلى عدالة.
+                </div>
+              </div>
+
+              <!-- Path 2 -->
+              <div class="academic-card gold-border" style="border-right-width: 8px; padding: 24px 28px;">
+                <div class="card-title" style="color: var(--gold-dark); font-size: 26px;">
+                  <span>المسار الثاني: التحكم والعزل الجغرافي المنسق (Control)</span>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 8px 0;">
+                  <div
+                    style="background: #fff; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--border-light); font-size: 19.5px; line-height: 1.5;">
+                    <strong style="color: var(--gold-dark); font-size: 21.5px;">طبقة التنسيق المشتركة:</strong><br>
+                    Multi-Vendor (Huawei & Ericsson)
+                  </div>
+                  <div
+                    style="background: #fff; padding: 16px 18px; border-radius: 12px; border: 2px solid var(--border-light); font-size: 19.5px; line-height: 1.5;">
+                    <strong style="color: var(--gold-dark); font-size: 21.5px;">آليات التحكم والاسترجاع:</strong><br>
+                    Bearer Restriction & KPI Monitoring
+                  </div>
+                </div>
+                <div
+                  style="background: var(--gold-light); padding: 14px 18px; border-radius: 12px; font-size: 20px; color: var(--gold-dark); font-weight: 700; line-height: 1.55;">
+                  الهدف النهائي: عزل رقمي فوري ودقيق للمنطقة المستهدفة مع ضمان سرعة الاسترجاع التلقائي بعد الطوارئ.
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 07: المسار الأول: خوارزميات التخطيط الذكي
+           ========================================== -->
+        <div class="slide-item" id="slide-7">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">المسار الأول: التخطيط والتحسين</span>
+              <h2 class="slide-title">صياغة مسألة الترقية وخوارزميات BPSO و AGA</h2>
+              <span class="slide-subtitle">تحسين متعدد الأهداف مع آلية معالجة وإصلاح القيود الصارمة للميزانية</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <!-- 4 Badges Large -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; flex-shrink: 0;">
+              <div class="academic-card highlight" style="padding: 16px 18px; text-align: center;">
+                <strong style="color: var(--green-primary); font-size: 22px;">١. تعظيم التغطية</strong>
+                <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">Coverage Maximization</span>
+              </div>
+              <div class="academic-card highlight" style="padding: 16px 18px; text-align: center;">
+                <strong style="color: var(--green-primary); font-size: 22px;">٢. تقليل الكلفة CAPEX</strong>
+                <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">Capital Expenditure</span>
+              </div>
+              <div class="academic-card highlight" style="padding: 16px 18px; text-align: center;">
+                <strong style="color: var(--green-primary); font-size: 22px;">٣. ترشيد الطاقة</strong>
+                <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">Energy Efficiency (MWh)</span>
+              </div>
+              <div class="academic-card gold-border" style="padding: 16px 18px; text-align: center;">
+                <strong style="color: var(--gold-dark); font-size: 22px;">٤. العدالة المكانية</strong>
+                <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">Spatial Fairness (SFI)</span>
+              </div>
+            </div>
+
+            <div class="grid-2col">
+
+              <!-- BPSO Card -->
+              <div class="academic-card highlight" style="padding: 24px 28px;">
+                <div class="card-title" style="justify-content: space-between; font-size: 26px;">
+                  <span>خوارزمية سرب الجسيمات الثنائية (BPSO)</span>
+                  <span class="badge-win">الأعلى كفاءة</span>
+                </div>
+                <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.6; font-weight: 600;">
+                  نمذجة موقع الجسيم كمتجه ثنائي (0 أو 1) يمثل قرار ترقية كل موقع خلوي إلى تقنية 5G.
+                </p>
+                <ul
+                  style="padding-right: 26px; font-size: 20.5px; color: var(--text-secondary); line-height: 1.7; font-weight: 600;">
+                  <li style="margin-bottom: 6px;">دالة نقل ثنائية متقدمة لتحديث سرعات ومواقع الجسيمات بكفاءة في الفضاء المتقطع.</li>
+                  <li style="margin-bottom: 6px;">سرعة تقارب قياسية: بلغت الحل الأمثل في <strong>118 ثانية</strong> فقط.</li>
+                  <li>حققت تفوقاً شاملاً في التغطية، خفض الإنفاق الرأسمالي، وترشيد استهلاك الطاقة.</li>
+                </ul>
+                <div
+                  style="padding: 14px 18px; background: var(--green-subtle); border-radius: 12px; font-size: 19.5px; font-weight: 800; color: var(--green-dark);">
+                  مؤشر العدالة المكانية المحقق: 0.71 (توزيع جغرافي متزن جداً يراعي كافة المحافظات)
+                </div>
+              </div>
+
+              <!-- AGA Card -->
+              <div class="academic-card gold-border" style="padding: 24px 28px;">
+                <div class="card-title"
+                  style="justify-content: space-between; color: var(--gold-dark); font-size: 26px;">
+                  <span>الخوارزمية الجينية التكيفية (AGA)</span>
+                  <span
+                    style="background: var(--gold-accent); color: white; font-size: 15px; padding: 4px 12px; border-radius: 6px; font-weight: 700;">الأعلى
+                    استقراراً</span>
+                </div>
+                <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.6; font-weight: 600;">
+                  استخدام معدلات تكيفية للعبور والطفرة (Adaptive Crossover & Mutation) تتغير بحسب لياقة الأفراد.
+                </p>
+                <ul
+                  style="padding-right: 26px; font-size: 20.5px; color: var(--text-secondary); line-height: 1.7; font-weight: 600;">
+                  <li style="margin-bottom: 6px;">تطبيق آلية إصلاح الجينات (Constraint Repair Mechanism) لتجنب الحلول غير المجدية.</li>
+                  <li style="margin-bottom: 6px;">أظهرت استقراراً إحصائياً عالياً جداً وانحرافاً معيارياً منخفضاً عبر تكرار التجارب.</li>
+                  <li>استغرقت <strong>142 ثانية</strong>، وحققت تغطية 94.91% بكلفة 141.2 مليون دولار.</li>
+                </ul>
+                <div
+                  style="padding: 14px 18px; background: var(--gold-light); border-radius: 12px; font-size: 19.5px; font-weight: 800; color: var(--gold-dark);">
+                  مؤشر العدالة المكانية المحقق: 0.52 (تفوق مؤكد على النماذج المرجعية)
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 08: نتائج التخطيط والمقارنة المعيارية
+           ========================================== -->
+        <div class="slide-item" id="slide-8">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">النتائج التجريبية والتقييم الكمي</span>
+              <h2 class="slide-title">مقارنة أداء BPSO مقابل AGA والنماذج المرجعية</h2>
+              <span class="slide-subtitle">البيانات الرقمية الحقيقية لسيناريو قيد العدالة المكانية (الجدول ١ من الأطروحة)</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-2col" style="gap: 28px;">
+
+              <!-- Official Comparison Table -->
+              <div
+                style="display: flex; flex-direction: column; justify-content: space-between; gap: 16px; min-height: 0;">
+                <table class="academic-table">
+                  <thead>
+                    <tr>
+                      <th>الطريقة / الخوارزمية</th>
+                      <th>التغطية (%)</th>
+                      <th>الكلفة ($ مليون)</th>
+                      <th>الطاقة (MWh)</th>
+                      <th>العدالة (SFI)</th>
+                      <th>الزمن (ثانية)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr class="winner-row">
+                      <td><strong>BPSO المقترحة</strong> <span class="badge-win">الأفضل</span></td>
+                      <td><strong>95.12%</strong></td>
+                      <td><strong>132.8</strong></td>
+                      <td><strong>78.3</strong></td>
+                      <td><strong>0.71</strong></td>
+                      <td><strong>118 ثا</strong></td>
+                    </tr>
+                    <tr>
+                      <td><strong>AGA المقترحة</strong></td>
+                      <td>94.91%</td>
+                      <td>141.2</td>
+                      <td>82.7</td>
+                      <td>0.52</td>
+                      <td>142 ثا</td>
+                    </tr>
+                    <tr>
+                      <td>نموذج دون عدالة مكانيّة</td>
+                      <td>94.90%</td>
+                      <td>139.6</td>
+                      <td>80.9</td>
+                      <td>0.49</td>
+                      <td>131 ثا</td>
+                    </tr>
+                    <tr>
+                      <td>GA قياسية دون إصلاح</td>
+                      <td>94.75%</td>
+                      <td>143.8</td>
+                      <td>84.1</td>
+                      <td>0.48</td>
+                      <td>158 ثا</td>
+                    </tr>
+                    <tr style="color: var(--text-muted);">
+                      <td>الاختيار العشوائي (مرجعي)</td>
+                      <td>88.35%</td>
+                      <td>150.3</td>
+                      <td>91.5</td>
+                      <td>0.41</td>
+                      <td>-</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div
+                  style="background: var(--green-subtle); border: 2px solid rgba(23,107,69,0.3); padding: 16px 22px; border-radius: 12px; flex-shrink: 0;">
+                  <strong style="color: var(--green-dark); font-size: 21px;">الاستنتاج العلمي الأساسي:</strong>
+                  <p
+                    style="font-size: 20px; color: var(--text-secondary); margin-top: 5px; font-weight: 600; line-height: 1.6;">
+                    تفوقت خوارزمية <strong>BPSO</strong> المقترحة في كافة المؤشرات الكمية (أعلى تغطية، وفر مالي قدره 8.4
+                    مليون دولار، وأعلى عدالة مكانية بفارق كبير 0.71 مقابل 0.52)، بينما تميزت <strong>AGA</strong>
+                    باستقرار إحصائي وتكراري أعلى.
+                  </p>
+                </div>
+              </div>
+
+              <!-- Radar Chart Figure from Thesis -->
+              <div class="map-frame">
+                <div class="map-frame-header">
+                  <span>مخطط الرادار للمقارنة متعددة المعايير</span>
+                  <span style="font-size: 17px; color: var(--text-muted);">الشكل ٢٨ من الأطروحة</span>
+                </div>
+                <div class="map-frame-body">
+                  <img src="figures/fig28_radar_chart_comparison.png" alt="Radar Chart Comparison">
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800; color: var(--green-dark); text-align: center; padding: 12px 14px; background: var(--green-subtle); width: 100%; border-radius: 8px; flex-shrink: 0;">
+                  مقارنة شمولية تبرز التفوق الحجمي لمضلع BPSO في موازنة المعايير الأربعة
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 09: العدالة المكانية والخرائط المقارنة لسوريا
+           ========================================== -->
+        <div class="slide-item" id="slide-9">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الأثر الجغرافي والتنموي</span>
+              <h2 class="slide-title">من التغطية الجيدة إلى التوزيع العادل (Spatial Fairness)</h2>
+              <span class="slide-subtitle">إثبات الأثر الميداني لتطبيق مؤشر العدالة في توزيع أبراج الجيل الخامس في
+                سوريا</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-2col-map">
+
+              <div
+                style="display: flex; flex-direction: column; gap: 16px; justify-content: space-between; min-height: 0;">
+                <div class="academic-card highlight" style="padding: 20px 26px;">
+                  <span class="stat-label" style="font-size: 21px;">مؤشر العدالة المكانية المحقق (Spatial Fairness Index)</span>
+                  <div style="display: flex; align-items: baseline; gap: 32px; margin-top: 8px;">
+                    <div>
+                      <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">نموذج
+                        BPSO العادل</span>
+                      <div class="stat-hero-number" style="font-size: 68px;">0.71 <span
+                          style="font-size: 26px; color: var(--green-primary);">✓</span></div>
+                    </div>
+                    <div style="border-right: 2.5px solid var(--border-light); padding-right: 30px;">
+                      <span style="font-size: 18px; color: var(--text-muted); display: block; font-weight: 700;">النموذج
+                        التقليدي التجاري</span>
+                      <div class="stat-hero-number red" style="font-size: 68px;">0.49 <span
+                          style="font-size: 26px; color: var(--red-syrian);">✗</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="academic-card gold-border" style="padding: 20px 26px;">
+                  <div class="card-title" style="font-size: 25px; color: var(--gold-dark);">
+                    <span>المفهوم الجوهري للعدالة المكانية:</span>
+                  </div>
+                  <p style="font-size: 21.5px; color: var(--text-secondary); line-height: 1.65; font-weight: 600;">
+                    «لا يكفي أن تصل الشبكة إلى أكبر عدد من المشتركين عبر تكديس الأبراج في المدن المكتظة، بل يجب ضمان حق
+                    المجتمعات الريفية في الوصول إلى خدمات الاتصالات الحديثة دون الإخلال بالجدوى الاقتصادية».
+                  </p>
+                </div>
+
+                <div
+                  style="background: var(--green-subtle); border: 2px solid rgba(23,107,69,0.3); border-radius: 12px; padding: 16px 22px; font-size: 20px; color: var(--green-dark); font-weight: 800; line-height: 1.6; flex-shrink: 0;">
+                  ⚖️ أثبتت النتائج أن زيادة طفيفة جداً في الكلفة الإجمالية قادت لقفزة نوعية في مؤشر العدالة من
+                  <strong>0.49 إلى 0.71</strong>، ما يقلص الفجوة الرقمية الوطنية بفاعلية.
+                </div>
+              </div>
+
+              <!-- Syria Real BPSO Geographic Distribution Map -->
+              <div class="map-frame">
+                <div class="map-frame-header">
+                  <span>خريطة التوزيع المكاني للأبراج المختارة بواسطة BPSO</span>
+                  <span style="font-size: 17px; color: var(--text-muted);">الشكل ٢٤ من الأطروحة</span>
+                </div>
+                <div class="map-frame-body">
+                  <img src="figures/fig24_syria_bpso_geographic_distribution.png"
+                    alt="Syria BPSO Geographic Distribution">
+                </div>
+                <div
+                  style="font-size: 20px; font-weight: 800; color: var(--green-dark); text-align: center; padding: 12px 14px; background: var(--green-subtle); width: 100%; border-radius: 8px; flex-shrink: 0;">
+                  توزيع متوازن للأبراج المرشحة يغطي المحافظات والأرياف السورية بعد تطبيق قيد العدالة
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 10: المسار الثاني: التحكم والعزل الجغرافي
+           ========================================== -->
+        <div class="slide-item" id="slide-10">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">المسار الثاني: إدارة الطوارئ</span>
+              <h2 class="slide-title">التحكم الذكي بالتغطية والعزل الجغرافي الدقيق</h2>
+              <span class="slide-subtitle">إدارة استباقية قائمة على الشبكة الأساسية (Core Network) وتنسيق متعدد الموردين</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <!-- 4 Sequential Operational Phases Large -->
+            <div class="timeline-steps">
+              <div class="timeline-step-card active-step" style="padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="step-number-tag" style="width: 36px; height: 36px; font-size: 20px;">١</span>
+                  <strong style="font-size: 21px; color: var(--green-dark);">تحديد المضلع GIS</strong>
+                </div>
+                <p style="font-size: 18px; color: var(--text-secondary); font-weight: 600; line-height: 1.5;">
+                  رسم المنطقة الجغرافية المستهدفة بدقة مضلعية في بيئة GIS.
+                </p>
+              </div>
+
+              <div class="timeline-step-card active-step" style="padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="step-number-tag" style="width: 36px; height: 36px; font-size: 20px;">٢</span>
+                  <strong style="font-size: 21px; color: var(--green-dark);">استخراج الخلايا</strong>
+                </div>
+                <p style="font-size: 18px; color: var(--text-secondary); font-weight: 600; line-height: 1.5;">
+                  تحديد قطاعات الخلايا المتقاطعة مع مراعاة زوايا الإشعاع.
+                </p>
+              </div>
+
+              <div class="timeline-step-card alert-step" style="padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="step-number-tag" style="width: 36px; height: 36px; font-size: 20px; background: #fdf0f0; color: var(--red-syrian);">٣</span>
+                  <strong style="font-size: 21px; color: var(--red-syrian);">تقييد حوامل الخدمة</strong>
+                </div>
+                <p style="font-size: 18px; color: var(--text-secondary); font-weight: 600; line-height: 1.5;">
+                  تقييد Bearer Services في الـ Core مع إبقاء قنوات الطوارئ.
+                </p>
+              </div>
+
+              <div class="timeline-step-card active-step" style="padding: 16px 18px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span class="step-number-tag" style="width: 36px; height: 36px; font-size: 20px;">٤</span>
+                  <strong style="font-size: 21px; color: var(--green-dark);">مراقبة الاسترجاع</strong>
+                </div>
+                <p style="font-size: 18px; color: var(--text-secondary); font-weight: 600; line-height: 1.5;">
+                  مراقبة مؤشرات الشبكة وتنفيذ Rollback الموثوق فور انتهاء الحدث.
+                </p>
+              </div>
+            </div>
+
+            <div class="grid-2col">
+
+              <div class="academic-card highlight" style="padding: 24px 28px;">
+                <div class="card-title" style="font-size: 26px;">
+                  <span>المزايا المعمارية للعزل الرقمي المقترح</span>
+                </div>
+                <ul
+                  style="padding-right: 26px; font-size: 21px; color: var(--text-secondary); line-height: 1.75; font-weight: 600;">
+                  <li style="margin-bottom: 8px;"><strong>صفر تشويش راديوي:</strong> عدم إرسال أي طاقة تشويش بالفضاء، وحماية الطيف الترددي الوطني.</li>
+                  <li style="margin-bottom: 8px;"><strong>إبقاء قنوات الطوارئ:</strong> استمرار قنوات البث العام والإشارات الاستدلالية لسلامة المواطنين.</li>
+                  <li style="margin-bottom: 8px;"><strong>توافقية مع Huawei و Ericsson:</strong> توحيد تعليمات التحكم عبر طبقة أوركسترا وسيطة.</li>
+                  <li><strong>تراجع كامل (Rollback):</strong> استعادة الخدمات فوراً دون الحاجة لإعادة تشغيل المحطات فيزيائياً.</li>
+                </ul>
+              </div>
+
+              <!-- Multivendor Architecture Image from Thesis -->
+              <div class="map-frame">
+                <div class="map-frame-header">
+                  <span>معمارية التنسيق متعدد الموردين والتحكم بـ GIS</span>
+                  <span style="font-size: 17px; color: var(--text-muted);">الشكل ٢٩ من الأطروحة</span>
+                </div>
+                <div class="map-frame-body">
+                  <img src="figures/fig29_multivendor_gis_architecture.png" alt="Multi-vendor GIS Architecture">
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 11: نتائج التحكم والعزل الميداني
+           ========================================== -->
+        <div class="slide-item" id="slide-11">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">النتائج الميدانية لطبقة التحكم</span>
+              <h2 class="slide-title">دقة مكانية عالية وتنسيق تشغيلي موثوق في الطوارئ</h2>
+              <span class="slide-subtitle">النتائج الميدانية للعزل المكاني، انتشار الإشارة، وأزمنة استعادة الخدمة الكاملة</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <!-- 3 Big Metric Cards Large -->
+            <div class="grid-3col">
+              <div class="academic-card highlight" style="text-align: center; padding: 22px 24px;">
+                <span class="stat-label" style="font-size: 20px;">دقة العزل المكاني (المناطق الحضرية)</span>
+                <div class="stat-hero-number" style="justify-content: center; font-size: 72px; margin: 6px 0;">97.5%</div>
+                <span style="font-size: 20px; color: var(--green-dark); font-weight: 800;">انحصار دقيق للتأثير داخل المضلع المستهدف</span>
+              </div>
+
+              <div class="academic-card gold-border" style="text-align: center; padding: 22px 24px;">
+                <span class="stat-label" style="font-size: 20px;">معدل نجاح التنسيق متعدد الموردين</span>
+                <div class="stat-hero-number gold" style="justify-content: center; font-size: 72px; margin: 6px 0;">&gt; 97.4%</div>
+                <span style="font-size: 20px; color: var(--gold-dark); font-weight: 800;">توافق تام مع منصات Huawei & Ericsson</span>
+              </div>
+
+              <div class="academic-card alert-border" style="text-align: center; padding: 22px 24px;">
+                <span class="stat-label" style="font-size: 20px;">الانتشار غير المقصود (المناطق الريفية)</span>
+                <div class="stat-hero-number red" style="justify-content: center; font-size: 72px; margin: 6px 0;">&gt; 46%</div>
+                <span style="font-size: 20px; color: var(--red-syrian); font-weight: 800;">قيد فيزيائي حتمي لكبر حجم الخلايا وتباعدها</span>
+              </div>
+            </div>
+
+            <!-- Restoration Timelines -->
+            <div class="academic-card" style="padding: 24px 28px;">
+              <div class="card-title" style="margin-bottom: 14px; font-size: 26px;">
+                <span>⏱️ أزمنة استعادة الخدمة الكاملة المعتمدة بعد انتهاء حالة الطوارئ (Rollback Times):</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                <div
+                  style="background: var(--bg-alt); padding: 18px 20px; border-radius: 12px; border: 2px solid var(--border-light); text-align: center;">
+                  <span style="font-size: 19px; font-weight: 800; color: var(--text-muted);">شبكات الجيل الثاني 2G</span>
+                  <div style="font-size: 34px; font-weight: 900; color: var(--green-primary); margin: 4px 0;">أقل من 5 دقائق</div>
+                  <span style="font-size: 18.5px; color: var(--text-secondary); font-weight: 600;">استرجاع فوري للمكالمات الصوتية الأساسية</span>
+                </div>
+
+                <div
+                  style="background: var(--bg-alt); padding: 18px 20px; border-radius: 12px; border: 2px solid var(--border-light); text-align: center;">
+                  <span style="font-size: 19px; font-weight: 800; color: var(--text-muted);">شبكات الجيل الثالث 3G</span>
+                  <div style="font-size: 34px; font-weight: 900; color: var(--green-primary); margin: 4px 0;">أقل من 7 دقائق</div>
+                  <span style="font-size: 18.5px; color: var(--text-secondary); font-weight: 600;">استرجاع قنوات الحزم والبيانات المتوسطة</span>
+                </div>
+
+                <div
+                  style="background: var(--bg-alt); padding: 18px 20px; border-radius: 12px; border: 2px solid var(--border-light); text-align: center;">
+                  <span style="font-size: 19px; font-weight: 800; color: var(--text-muted);">شبكات الجيل الرابع 4G LTE</span>
+                  <div style="font-size: 34px; font-weight: 900; color: var(--green-primary); margin: 4px 0;">أقل من 10 دقائق</div>
+                  <span style="font-size: 18.5px; color: var(--text-secondary); font-weight: 600;">إعادة تشغيل كامل النطاق العريض والـ Bearers</span>
+                </div>
+              </div>
+              <div
+                style="font-size: 19px; font-weight: 700; color: var(--text-muted); margin-top: 12px; text-align: center;">
+                💡 يثبت التقييم أن الانتشار غير المقصود في الأرياف ناتج عن الخصائص الفيزيائية للموجات وكبر مساحة
+                الخلايا، وليس عيباً في بروتوكول التحكم.
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 12: القيمة العلمية والإسهامات الرئيسية
+           ========================================== -->
+        <div class="slide-item" id="slide-12">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الحصيلة والأصالة العلمية</span>
+              <h2 class="slide-title">ماذا أضافت هذه الأطروحة للمكتبة العلمية والتطبيقية؟</h2>
+              <span class="slide-subtitle">أربع مساهمات جوهرية تشكل قيمة مضافة في قطاع الاتصالات ونظم المعلومات</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-2col" style="gap: 24px;">
+
+              <div class="academic-card highlight" style="padding: 26px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 54px; height: 54px; border-radius: 12px; background: var(--green-subtle); color: var(--green-primary); display: flex; align-items: center; justify-content: center; font-size: 27px; font-weight: 900;">
+                    ١</div>
+                  <div class="card-title" style="margin: 0; font-size: 26px;">بناء أضخم قاعدة بيانات وطنية موحدة</div>
+                </div>
+                <p
+                  style="font-size: 22px; color: var(--text-secondary); line-height: 1.7; font-weight: 600; margin-top: 8px;">
+                  تجميع وتدقيق وتوحيد بيانات <strong>79,268 موقعاً خلوياً</strong> للمشغلين السوريين في بيئة GIS، لتكون
+                  أول قاعدة بيانات بحثية موحدة متكاملة لدراسات الاتصالات المتقدمة في سوريا.
+                </p>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 26px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 54px; height: 54px; border-radius: 12px; background: var(--gold-light); color: var(--gold-dark); display: flex; align-items: center; justify-content: center; font-size: 27px; font-weight: 900;">
+                    ٢</div>
+                  <div class="card-title" style="margin: 0; color: var(--gold-dark); font-size: 26px;">إدماج صريح لمعيار العدالة المكانية (SFI)</div>
+                </div>
+                <p
+                  style="font-size: 22px; color: var(--text-secondary); line-height: 1.7; font-weight: 600; margin-top: 8px;">
+                  صياغة نموذج استمثال رياضي رباعي الأهداف يدمج العدالة المكانية إلى جانب التغطية والكلفة والطاقة، مما
+                  يحمي حقوق الأرياف والمناطق النامية في الحصول على خدمات 5G.
+                </p>
+              </div>
+
+              <div class="academic-card highlight" style="padding: 26px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 54px; height: 54px; border-radius: 12px; background: var(--green-subtle); color: var(--green-primary); display: flex; align-items: center; justify-content: center; font-size: 27px; font-weight: 900;">
+                    ٣</div>
+                  <div class="card-title" style="margin: 0; font-size: 26px;">تطوير ومقارنة متقدمة لخوارزميتي BPSO و AGA</div>
+                </div>
+                <p
+                  style="font-size: 22px; color: var(--text-secondary); line-height: 1.7; font-weight: 600; margin-top: 8px;">
+                  ابتكار آليات إصلاح القيود في الخوارزميتين، وتقديم دراسة مقارنة معمقة أثبتت تفوق BPSO كمياً وسرعة،
+                  واستقرار AGA إحصائياً في فضاءات الحلول التوافقية الضخمة.
+                </p>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 26px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 54px; height: 54px; border-radius: 12px; background: var(--gold-light); color: var(--gold-dark); display: flex; align-items: center; justify-content: center; font-size: 27px; font-weight: 900;">
+                    ٤</div>
+                  <div class="card-title" style="margin: 0; color: var(--gold-dark); font-size: 26px;">إطار GIS للتحكم متعدد الموردين القابل للاستعادة</div>
+                </div>
+                <p
+                  style="font-size: 22px; color: var(--text-secondary); line-height: 1.7; font-weight: 600; margin-top: 8px;">
+                  تقديم حل برمجي تشغيلي بديل للتشويش الراديوي يحقق عزلاً جغرافياً بنسبة 97.5% عبر الشبكة الأساسية، ويوفر
+                  آلية تراجع واستعادة موثوقة في دقائق معدودة.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 13: التوصيات العملية التطبيقية
+           ========================================== -->
+        <div class="slide-item" id="slide-13">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الجاهزية والجدوى الوطنية</span>
+              <h2 class="slide-title">التوصيات العملية: من النمذجة البحثية إلى التطبيق الوطني</h2>
+              <span class="slide-subtitle">خارطة طريق تنفيذية للهيئة الناظمة للاتصالات ومزودي الخدمة السوريين</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-3col">
+
+              <div class="academic-card highlight" style="padding: 28px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--green-subtle); color: var(--green-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900;">
+                    ١</div>
+                  <div class="card-title" style="font-size: 26px;">اعتماد BPSO كمعيار تخطيط</div>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  يوصى باعتماد خوارزمية BPSO لدى المشغلين السوريين (Syriatel و MTN) لتحديد أولويات ترقية المواقع نحو 5G
+                  لتحقيق أعلى تغطية بأدنى كلفة استثمارية.
+                </p>
+                <div
+                  style="padding: 12px 18px; background: var(--green-subtle); border-radius: 12px; font-size: 20px; color: var(--green-primary); font-weight: 800;">
+                  وفر استثماري يتجاوز ٨.٤ مليون دولار
+                </div>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 28px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--gold-light); color: var(--gold-dark); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900;">
+                    ٢</div>
+                  <div class="card-title" style="font-size: 26px; color: var(--gold-dark);">إدراج معيار العدالة تنظيمياً</div>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  توصية الهيئة الناظمة للاتصالات والبريد بإلزام المشغلين بشرط العدالة المكانية (SFI) كأحد بنود الترخيص،
+                  لضمان نصيب عادل للأرياف والمحافظات النامية.
+                </p>
+                <div
+                  style="padding: 12px 18px; background: var(--gold-light); border-radius: 12px; font-size: 20px; color: var(--gold-dark); font-weight: 800;">
+                  تقليص الفجوة الرقمية التنموية في سوريا
+                </div>
+              </div>
+
+              <div class="academic-card highlight" style="padding: 28px 30px;">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                  <div
+                    style="width: 56px; height: 56px; border-radius: 12px; background: var(--green-subtle); color: var(--green-primary); display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 900;">
+                    ٣</div>
+                  <div class="card-title" style="font-size: 26px;">منصة التحكم المشترك بالطوارئ</div>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  إنشاء غرفة تحكم وطنية موحدة تربط نظم GIS مع شبكات المشغلين لإدارة سيناريوهات الطوارئ برمجياً
+                  والاستغناء عن معدات التشويش المشوهة للطيف.
+                </p>
+                <div
+                  style="padding: 12px 18px; background: var(--green-subtle); border-radius: 12px; font-size: 20px; color: var(--green-primary); font-weight: 800;">
+                  حماية الطيف وسرعة استعادة &lt; 10 دقائق
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 14: الآفاق المستقبلية
+           ========================================== -->
+        <div class="slide-item" id="slide-14">
+          <div class="slide-header">
+            <div class="slide-title-wrap">
+              <span class="slide-category">الامتداد البحثي والمستقبل</span>
+              <h2 class="slide-title">الآفاق المستقبلية: نحو شبكات خلوية ذاتية التشغيل والتكيف</h2>
+              <span class="slide-subtitle">مسارات بحثية واعدة مستمدة من قيود الدراسة وتطورات الجيلين الخامس والسادس</span>
+            </div>
+          </div>
+          <div class="slide-body">
+
+            <div class="grid-2col" style="gap: 24px;">
+
+              <div class="academic-card highlight" style="padding: 26px 30px;">
+                <div class="card-title" style="font-size: 26px;">
+                  <span>١. التنبؤ بحركة المرور (AI Traffic Prediction)</span>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  دمج نماذج التعلم العميق والشبكات العصبونية (LSTM / Graph Neural Networks) للتنبؤ بحركة المشتركين
+                  وتغيرات الطلب الزمانية والمكانية بدلاً من الاقتصار على بيانات الحالة الثابتة.
+                </p>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 26px 30px;">
+                <div class="card-title" style="color: var(--gold-dark); font-size: 26px;">
+                  <span>٢. توسيع التنسيق لموردي Open-RAN ومصنعين جدد</span>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  توسيع طبقة الأوركسترا متعددة الموردين لتشمل تجهيزات ZTE وNokia، ودعم معايير الشبكات المفتوحة Open-RAN
+                  لتقليل الارتهان لمورد اتصالات تجاري واحد.
+                </p>
+              </div>
+
+              <div class="academic-card highlight" style="padding: 26px 30px;">
+                <div class="card-title" style="font-size: 26px;">
+                  <span>٣. تسريع الحوسبة المكانية والتحكم اللحظي (GPU GIS)</span>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  توظيف وحدات المعالجة الرسومية (GPUs) والمعالجة المتوازية لتنفيذ حسابات التقاطع المكاني للخلايا في
+                  أجزاء من الثانية لسيناريوهات الاستجابة الفورية للطوارئ.
+                </p>
+              </div>
+
+              <div class="academic-card gold-border" style="padding: 26px 30px;">
+                <div class="card-title" style="color: var(--gold-dark); font-size: 26px;">
+                  <span>٤. نمذجة انتشار ثلاثية الأبعاد والتضاريس المعقدة</span>
+                </div>
+                <p class="card-text" style="font-size: 22.5px; line-height: 1.7;">
+                  دمج نماذج الارتفاعات الطبوغرافية الرقمية (DEM) والبيئات العمرانية ثلاثية الأبعاد لتقليل نسبة الانتشار
+                  غير المقصود في المناطق الجبلية والريفية الوعرة في سوريا.
+                </p>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- ==========================================
+           SLIDE 15: الخاتمة والشكر
+           ========================================== -->
+        <div class="slide-item" id="slide-15">
+          <div class="slide-body" style="justify-content: center; align-items: center; text-align: center;">
+            <div
+              style="width: 100%; max-width: 1320px; display: flex; flex-direction: column; align-items: center; gap: 26px;">
+
+              <div
+                style="background: var(--green-subtle); border: 2.5px solid rgba(23,107,69,0.35); padding: 10px 32px; border-radius: 40px; font-size: 22px; font-weight: 800; color: var(--green-primary);">
+                الخلاصة والرسالة الختامية
+              </div>
+
+              <h2 style="font-size: 46px; font-weight: 900; color: var(--green-dark); line-height: 1.55;">
+                «التخطيط الذكي لا يقاس فقط بمدى اتساع التغطية،<br>
+                بل بمدى كفاءتها وعدالتها وقدرتنا على التحكم بها»
+              </h2>
+
+              <div style="display: flex; gap: 26px; justify-content: center; margin: 6px 0;">
+                <div
+                  style="background: #FFFFFF; border: 2px solid var(--border-light); box-shadow: var(--shadow-sm); padding: 18px 36px; border-radius: 16px; font-weight: 800; font-size: 24px; color: var(--green-primary);">
+                  تغطية أفضل وأوسع
+                </div>
+                <div
+                  style="background: #FFFFFF; border: 2px solid var(--border-light); box-shadow: var(--shadow-sm); padding: 18px 36px; border-radius: 16px; font-weight: 800; font-size: 24px; color: var(--gold-dark);">
+                  عدالة مكانية وإنصاف ريفي
+                </div>
+                <div
+                  style="background: #FFFFFF; border: 2px solid var(--border-light); box-shadow: var(--shadow-sm); padding: 18px 36px; border-radius: 16px; font-weight: 800; font-size: 24px; color: var(--green-dark);">
+                  تحكم دقيق واستعادة موثوقة
+                </div>
+              </div>
+
+              <div
+                style="width: 200px; height: 5px; background: linear-gradient(90deg, var(--gold-accent), var(--green-primary)); border-radius: 3px; margin: 6px 0;">
+              </div>
+
+              <h3 style="font-size: 44px; font-weight: 900; color: var(--green-primary);">
+                شكراً جزيلاً لحسن استماعكم واهتمامكم
+              </h3>
+
+              <p style="font-size: 26px; color: var(--text-secondary); font-weight: 700;">
+                الباحث: م. ياسر المفعلاني &nbsp;·&nbsp; دمشق 2026
+              </p>
+
+              <div
+                style="background: var(--bg-alt); border: 2px dashed rgba(23,107,69,0.5); padding: 18px 36px; border-radius: 14px; font-size: 23px; font-weight: 800; color: var(--green-dark); margin-top: 6px;">
+                نرحب بكافة ملاحظات وأسئلة السادة أعضاء لجنة الحكم والمناقشة الموقرة
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+      </main>
+
+      <!-- Bottom Navigation Dots & Info Bar -->
+      <footer class="pres-footer">
+        <div>
+          <span>الأطروحة: <strong>التخطيط والتحكم الذكي بالشبكة الخلوية في بيئة GIS</strong></span>
+        </div>
+
+        <!-- 15 Navigation Dots -->
+        <div class="dots-strip" id="dots-container"></div>
+
+        <div style="display: flex; gap: 14px; align-items: center;">
+          <span>الجمهورية العربية السورية</span>
+          <span>•</span>
+          <span>HIAST 2026</span>
+        </div>
+      </footer>
+
+      <!-- Thin Progress Bar Line -->
+      <div class="progress-track">
+        <div class="progress-bar" id="presentation-progress"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // High-performance Auto-Scaler for stage container
+    const stage = document.getElementById('stage-container');
+    const STAGE_WIDTH = 1920;
+    const STAGE_HEIGHT = 1080;
+
+    function resizeStage() {
+      const windowWidth = window.innerWidth;
+      const windowHeight = window.innerHeight;
+
+      const scaleX = windowWidth / STAGE_WIDTH;
+      const scaleY = windowHeight / STAGE_HEIGHT;
+      const scale = Math.min(scaleX, scaleY);
+
+      stage.style.transform = `scale(${scale})`;
+    }
+
+    window.addEventListener('resize', resizeStage);
+    window.addEventListener('DOMContentLoaded', resizeStage);
+    resizeStage();
+
+    // Slide Navigation Logic
+    let currentSlide = 0;
+    const totalSlides = 15;
+    const slides = document.querySelectorAll('.slide-item');
+    const slideNumEl = document.getElementById('current-slide-num');
+    const progressEl = document.getElementById('presentation-progress');
+    const dotsContainer = document.getElementById('dots-container');
+
+    function toArabicNumeral(n) {
+      const arabicDigits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+      return n.toString().split('').map(d => arabicDigits[parseInt(d)] || d).join('');
+    }
+
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot-node' + (i === 0 ? ' active' : '');
+      dot.title = 'شريحة ' + (i + 1);
+      dot.addEventListener('click', () => goToSlide(i));
+      dotsContainer.appendChild(dot);
+    }
+
+    function goToSlide(n) {
+      if (n < 0 || n >= totalSlides) return;
+      slides[currentSlide].classList.remove('active');
+
+      currentSlide = n;
+      slides[currentSlide].classList.add('active');
+
+      slideNumEl.textContent = toArabicNumeral(currentSlide + 1);
+
+      const pct = ((currentSlide + 1) / totalSlides) * 100;
+      progressEl.style.width = pct + '%';
+
+      const dots = document.querySelectorAll('.dot-node');
+      dots.forEach((d, idx) => {
+        if (idx === currentSlide) {
+          d.classList.add('active');
+        } else {
+          d.classList.remove('active');
+        }
+      });
+    }
+
+    function nextSlide() {
+      if (currentSlide < totalSlides - 1) {
+        goToSlide(currentSlide + 1);
+      }
+    }
+
+    function prevSlide() {
+      if (currentSlide > 0) {
+        goToSlide(currentSlide - 1);
+      }
+    }
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+          console.error('Fullscreen error:', err);
+        });
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft' || e.key === 'PageDown' || e.key === ' ') {
+        nextSlide();
+      } else if (e.key === 'ArrowRight' || e.key === 'PageUp') {
+        prevSlide();
+      } else if (e.key === 'f' || e.key === 'F') {
+        toggleFullScreen();
+      } else if (e.key === 'Home') {
+        goToSlide(0);
+      } else if (e.key === 'End') {
+        goToSlide(totalSlides - 1);
+      }
+    });
+
+    // Touch Swipe Support
+    let touchStartX = 0;
+    let touchEndX = 0;
+    window.addEventListener('touchstart', e => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, false);
+    window.addEventListener('touchend', e => {
+      touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 50) {
+        nextSlide();
+      } else if (touchEndX - touchStartX > 50) {
+        prevSlide();
+      }
+    }, false);
+  </script>
+
+</body>
+
+</html>
